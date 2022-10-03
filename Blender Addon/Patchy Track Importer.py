@@ -48,6 +48,10 @@ def patchy_track_data_import_and_parse_data(self, context, filePath):
     bpy.context.scene.render.fps_base = 1.0010000467300415
     fps = 59.94
     
+    #bpy.context.scene.render.fps = 60
+    #bpy.context.scene.render.fps_base = 1
+    #fps = 60
+
     # Allow sub frames.
     bpy.context.scene.show_subframe = True
     
@@ -95,9 +99,10 @@ def patchy_track_data_import_and_parse_data(self, context, filePath):
     # Set the camera' rotation mode to Quaternion.
     cameraObject.rotation_mode = 'QUATERNION'
 
-    # The video and the data are offset.
-    dataOffset = 3
-
+    # The timer starts from 0 and the video and the data are offset.
+    bpy.context.scene.frame_start = 0
+    dataOffset = 2
+    
     # Create the keyframes for the camera.
     lines = data.splitlines()
     for line in lines:
@@ -114,14 +119,12 @@ def patchy_track_data_import_and_parse_data(self, context, filePath):
             currentFrame = (int(v[1]) / 1000.0) * fps
             frame = int( math.floor(currentFrame) )
             subFrame = currentFrame - frame
+            print(frame, subFrame)
             bpy.context.scene.frame_set( dataOffset + frame, subframe=subFrame)
 
             # Set position, rotation and lens.
             bpy.data.objects["Patchy Track Camera"].location = (float(v[4]), float(v[5]), float(v[6]))
             bpy.data.objects["Patchy Track Camera"].rotation_quaternion = (float(v[10]), float(v[7]), float(v[8]), float(v[9]))
-
-            #q = Quaternion( (float(v[10]), float(v[7]), float(v[8]), float(v[9]) ) )
-            #bpy.data.objects["Patchy Track Camera"].rotation_euler = q.axis
 
             # Set key.
             bpy.ops.anim.keyframe_insert_menu(type='LocRotScale')
@@ -132,6 +135,11 @@ def patchy_track_data_import_and_parse_data(self, context, filePath):
 
     # Set end frame.
     bpy.context.scene.frame_end = frame
+
+    # Set all keyframes to stepped.
+    for fcurve in bpy.data.objects["Patchy Track Camera"].animation_data.action.fcurves:
+        for keyFrame in fcurve.keyframe_points:
+            keyFrame.interpolation = 'CONSTANT'
 
     # https://docs.blender.org/api/current/bpy.ops.html
 
